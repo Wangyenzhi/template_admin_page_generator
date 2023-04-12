@@ -1,0 +1,2 @@
+# template_admin_page_generator
+a small template_admin_page_generator
