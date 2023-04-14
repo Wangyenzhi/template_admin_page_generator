@@ -1,28 +1,33 @@
 import json
 from .page_class import *
+from .config import template_data
 
 
-def deal_yapi(configuration, file_path):
-    print('file_path', file_path)
-    yapi_url = input('请输入获取数据链接的YapiURL')
-    id_dict = get_id(yapi_url, configuration)
-    resp = requests.get(f'{configuration["serverUrl"]}{configuration["getInfoPath"]}', params=id_dict)
-    resp_text = json.loads(resp.text)
+def deal_yapi(configuration, file_path,yapi_type):
+    # print('file_path', file_path)
+    yapi_url = input('请输入获取数据链接的YapiURL(默认配置直接敲回车)')
+    if yapi_url:
+        id_dict = get_id(yapi_url, configuration)
+        resp = requests.get(f'{configuration["serverUrl"]}{configuration["getInfoPath"]}', params=id_dict)
+        resp_text = json.loads(resp.text)
+    else:
+        resp_text = template_data[yapi_type]
+    # print('resp_text', resp_text)
     resp_query_path = resp_text["data"]["query_path"]
     resp_body = json.loads(resp_text["data"]["res_body"])
     resp_body_other = json.loads(resp_text["data"]["req_body_other"])
-
     return resp_query_path, resp_body['properties'], resp_body_other['properties']
+    # else:
 
 
 def generate_page_list(configuration, generator_title, file_path, need_dialog=False):
-    resp_query_path, resp_body, resp_body_other = deal_yapi(configuration, file_path)
+    resp_query_path, resp_body, resp_body_other = deal_yapi(configuration, file_path,'list')
     resp_body = resp_body['data']['properties']['list']['items']['properties']
     return GenerateList(generator_title, resp_query_path, resp_body_other, resp_body, f'{"dialog_" if need_dialog else ""}list')
 
 
 def generate_page_add(configuration, generator_title, file_path, need_dialog=False):
-    resp_query_path, resp_body, resp_body_other = deal_yapi(configuration, file_path)
+    resp_query_path, resp_body, resp_body_other = deal_yapi(configuration, file_path,'add')
     return GenerateAdd(generator_title, resp_query_path, resp_body_other, resp_body, f'{"dialog_" if need_dialog else ""}add')
 
 
