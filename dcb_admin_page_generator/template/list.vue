@@ -5,15 +5,9 @@
         title="抽奖活动管理" :query-params.sync="queryParams"
         :table-option="table_option" :data="table_list" @press="press"/>
     </div>
-    <z_dialog_form
-      v-if="change_edit_visible" :visible.sync="change_edit_visible"
-      width="60%" v-model="change_active_info" :filed-width="'500px'" label-width="120px"
-      @finish="changeFinish"
-    />
-<!--    <z_dialog :visible.sync="el_dialog_visible" title="修改活动信息" width="80%" @finish="updateSession">-->
-<!--      <add_or_edit_step_2 ref="add_or_edit_step_2"/>-->
-<!--    </z_dialog>-->
     <z_view_qr v-if="z_view_qr_visible" :visible.sync="z_view_qr_visible" :view-url="previewUrl"/>
+    <!--  model_update  -->
+
   </div>
 </template>
 
@@ -44,72 +38,21 @@ export default {
       copyQueryParams: {},
       table_list: [{ test: '1' }],
       table_option: [],
-      change_active_info: [
-        { label: '活动信息', type: 'title', options: {} },
-        {
-          prop: 'activityName',
-          label: '活动名称',
-          type: 'input',
-          value:  '',
-          data: [],
-          options: { maxlength: 15, showWordLimit: true },
-          verification: 'req',
-        },
-        {
-          prop: 'description',
-          label: '活动简介',
-          type: 'richText',
-          value: '',
-          data: [],
-          options: { toolbarOptions: [['bold'], [{ color: [] }, { background: [] }]] },
-          height: '200px',
-          verification: 'req',
-        },
-        {
-          prop: 'businessChannelId',
-          label: '运营渠道',
-          type: 'channel',
-          value: '',
-          data: [],
-          options: { multiple: false },
-          verification: 'req',
-        },
-        { prop: 'headImage', label: '活动头图', type: 'img', value: '', data: [], options: {}, verification: 'req' },
-        {
-          prop: 'backgroundColor',
-          label: '活动背景颜色',
-          type: 'color',
-          value: '',
-          data: [],
-          options: {},
-          verification: 'req',
-        },
-        {
-          prop: 'rule',
-          label: '活动规则',
-          type: 'richText',
-          value: '',
-          data: [],
-          options: { toolbarOptions: [['bold'], [{ color: [] }, { background: [] }]] },
-          height: '200px',
-          verification: 'req',
-        },
-        { label: '活动分享信息', type: 'title', options: { tips: '配置后用于活动被分享至微信后的分享卡片展示信息' } },
-        { prop: 'shareTitle', label: '分享标题', type: 'input', value: '', data: [], options: {}, verification: 'req' },
-        { prop: 'shareDesc', label: '分享描述', type: 'input', value: '', data: [], options: {}, verification: 'req' },
-        { prop: 'shareImage', label: '分享略缩图', type: 'img', value: '', data: [], options: {}, verification: 'req' },
-      ],
+      change_active_info: [],
+      copy_change_active_info: [],
     };
   },
   async mounted() {
     await this.getDataList();
     this.copyQueryParams = deepCopy(this.queryParams);
+    this.copy_change_active_info = deepCopy(this.change_active_info)
     this.tableOperationInit();
   },
   methods: {
     press(val) {
       if (val === 'add') {
         this.$router.push({ path: 'add_or_edit', query: {} });
+        // this.changeActiveInfoReset()
         // this.change_edit_visible = true
 
       } else if (val === 'search') {
@@ -133,6 +76,9 @@ export default {
       this.queryParams = deepCopy(this.copyQueryParams);
       this.getDataList();
     },
+    changeActiveInfoReset(){
+        this.change_active_info = deepCopy(this.copy_change_active_info)
+    },
     async getDataList() {
       let temp_q = zfTemplateDataDeal(this.queryParams.fitter);
       temp_q = { ...temp_q, ...this.queryParams.pagination };
@@ -143,16 +89,28 @@ export default {
 
 
     async changeFinish() {
-      // const temp_form = await prepareFormData(zfTemplateDataDeal(this.change_active_info));
-      // await SOMEFUNCS(temp_form);
-      // this.$message.success('修改成功');
-      // this.change_edit_visible = false;
+      const temp_form = await prepareFormData(zfTemplateDataDeal(this.change_active_info));
+      await SOMETHING_SUBMIT(temp_form);
+      this.$message.success('操作成功');
+      await this.getDataList()
+      this.change_edit_visible = false;
+    },
+    async details(row) {
+      this.changeActiveInfoReset()
+      const res = await SOMEFUNCS_DETAIL({ id: row.id });
+      this.change_active_info = zfTurnToTemplate(res, this.change_active_info);
+      this.change_active_info = this.change_active_info.map(ele => {
+        return { ...ele, options: { ...ele.options, disabled: true } };
+      });
+      this.change_edit_visible = true;
+      console.log(row.id);
     },
     view(row) {
       this.previewUrl = row.previewUrl;
       this.z_view_qr_visible = true;
       console.log('row', row.previewUrl);
     },
+
     // 函数填充
 
   },

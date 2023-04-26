@@ -1,30 +1,31 @@
 <template>
-    <z_dialog_page
-      title="抽奖活动管理" only-close
-      :visible="visible"
-      :query-params.sync="queryParams"
-      :table-option="table_option"
-      :data.sync="table_list"
-      @press="press"
-      @update:visible="(val)=>{ $emit('update:visible',val) }"
-    />
+    <z_dialog
+        :visible="visible"
+        :title="title"
+        :append-to-body="appendToBody"
+        :width="width"
+        @update:visible="(val)=>{$emit('update:visible',val)}"
+        @finish="dialogConfirm"
+    >
+      <z_page
+        title="抽奖活动管理" :query-params.sync="queryParams"
+        :table-option="table_option" :data="table_list" @press="press"/>
+    <z_view_qr v-if="z_view_qr_visible" :visible.sync="z_view_qr_visible" :view-url="previewUrl"/>
+    <!--  model_update  -->
+    </z_dialog>
 </template>
 
 <script>
-import Z_dialog_page from '@/components/Z/z_dialog_page';
+import Z_page from '@/components/Z/z_page';
 import { zfTemplateDataDeal, zfTurnToTemplate,deepCopy } from '@/components/Z/z_funcs';
 import { prepareFormData } from '@/x';
+import Z_dialog_form from '@/components/Z/z_dialog_form';
+import Z_view_qr from '@/components/Z/z_view_qr';
 // Api writePlace
 
 export default {
   name: 'index',
-  components: {  Z_dialog_page },
-  props:{
-   visible:{
-      default:false,
-      type:Boolean
-    },
-  },
+  components: { Z_view_qr, Z_dialog_form, Z_page },
   data() {
     return {
       change_edit_visible:false,
@@ -39,19 +40,23 @@ export default {
       },
       previewUrl: '',
       copyQueryParams: {},
-      table_list: [],
+      table_list: [{ test: '1' }],
       table_option: [],
+      change_active_info: [],
+      copy_change_active_info: [],
     };
   },
   async mounted() {
     await this.getDataList();
     this.copyQueryParams = deepCopy(this.queryParams);
+    this.copy_change_active_info = deepCopy(this.change_active_info)
     this.tableOperationInit();
   },
   methods: {
     press(val) {
       if (val === 'add') {
         this.$router.push({ path: 'add_or_edit', query: {} });
+        // this.changeActiveInfoReset()
         // this.change_edit_visible = true
 
       } else if (val === 'search') {
@@ -66,16 +71,17 @@ export default {
       let target_fpt_index = this.table_option.findIndex(ele => {
         return ele.type === 'op';
       });
-      if (target_fpt_index !== -1){
-       this.table_option[target_fpt_index].options.tableOperationList = {
+      this.table_option[target_fpt_index].options.tableOperationList = {
         默认: [],
-        };
-      }
+      };
       console.log('this.table_option[target_fpt_index]', this.table_option[target_fpt_index]);
     },
     queryParamsReset() {
       this.queryParams = deepCopy(this.copyQueryParams);
       this.getDataList();
+    },
+    changeActiveInfoReset(){
+        this.change_active_info = deepCopy(this.copy_change_active_info)
     },
     async getDataList() {
       let temp_q = zfTemplateDataDeal(this.queryParams.fitter);
@@ -87,16 +93,28 @@ export default {
 
 
     async changeFinish() {
-      // const temp_form = await prepareFormData(zfTemplateDataDeal(this.change_active_info));
-      // await SOMEFUNCS(temp_form);
-      // this.$message.success('修改成功');
-      // this.change_edit_visible = false;
+      const temp_form = await prepareFormData(zfTemplateDataDeal(this.change_active_info));
+      await SOMETHING_SUBMIT(temp_form);
+      this.$message.success('操作成功');
+      await this.getDataList()
+      this.change_edit_visible = false;
+    },
+    async details(row) {
+      this.changeActiveInfoReset()
+      const res = await SOMEFUNCS_DETAIL({ id: row.id });
+      this.change_active_info = zfTurnToTemplate(res, this.change_active_info);
+      this.change_active_info = this.change_active_info.map(ele => {
+        return { ...ele, options: { ...ele.options, disabled: true } };
+      });
+      this.change_edit_visible = true;
+      console.log(row.id);
     },
     view(row) {
       this.previewUrl = row.previewUrl;
       this.z_view_qr_visible = true;
       console.log('row', row.previewUrl);
     },
+
     // 函数填充
 
   },
@@ -104,5 +122,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.index {
+  padding: 20px;
+  background-color: rgb(240, 242, 245);
+  position: relative;
+  height: calc(100vh - 100px);
+  overflow: auto;
 
+  .wrap-padding-ct {
+    position: relative;
+    min-height: calc(100vh - 140px);
+    background-color: #ffffff;
+    padding: 20px;
+  }
+}
 </style>
