@@ -26,6 +26,10 @@ def read_template(file_type):
         with open(f'{here}\\template\\dialog_list.vue', encoding='utf8') as f:
             text = f.read()
         return text
+    elif file_type == 'list_v2':
+        with open(f'{here}\\template\\list_v2.vue', encoding='utf8') as f:
+            text = f.read()
+        return text
     else:
         return ''
 
@@ -55,8 +59,15 @@ class GenerateList(object):
         add_config = self.addYapi.get_yapi_config(self.config) if self.addYapi else False
         detail_config = self.detailYapi.get_yapi_config(self.config) if self.detailYapi else False
 
-        text = text.replace('fitter: [],', f'fitter: {data_config["resp_body_other"]},')
+        print('data_config',data_config)
+        if self.type == 'list_v2':
+            data_config["resp_body_other"].append({'prop': 'reset', 'type': 'button', 'label': '重置', 'data': [], 'options': {'noFormItem': 'true'}})
+            data_config["resp_body_other"].append({'prop': 'search', 'type': 'button', 'label': '搜索', 'data': [], 'options': {'noFormItem': 'true', 'type': 'primary'}})
+            text = text.replace('// fitter', f'{data_config["resp_body_other"]}')
+        else:
+            text = text.replace('fitter: [],', f'fitter: {data_config["resp_body_other"]},')
         #  是否需要Operate
+
         if self.Operate:
             operate_list = self.Operate.split('、')
             table_operation_list = [f"tp['{func}']" for func in operate_list]
@@ -71,6 +82,7 @@ class GenerateList(object):
                 op_dict[operate_list[index]] = {'text': operate_list[index], 'icon': 'el-icon-edit-outline',
                                                 'func': f'this.{op_name_list[-1]}', 'authority': ''}
                 time.sleep(0.5)
+
             text = text.replace('tp = {}', f'tp={op_dict};'.replace("'this", 'this').replace("', 'aut", ",'aut"))
             text = text.replace('默认: []', f'默认:{table_operation_list}'.replace("\"", ''))
             for func in op_name_list:
@@ -79,7 +91,10 @@ class GenerateList(object):
                 {'prop': 'op', 'label': '操作', 'type': 'op', 'data': [], 'options': {'tableOperationList': []}}, )
         else:
             pass
-        text = text.replace('table_option: [],', f'table_option: {data_config["resp_body"]},')
+        if self.type == 'list_v2':
+            text = text.replace('// table_option', f'{data_config["resp_body"]}')
+        else:
+            text = text.replace('table_option: [],', f'table_option: {data_config["resp_body"]},')
         if add_config:
             text = text.replace('// Api writePlace', "import { " + data_config["resp_query_path"] + "," + add_config[
                 "resp_query_path"] + " } from '@/generated_api';")

@@ -141,8 +141,10 @@ class ZYapi(object):
         else:
             resp_text = template_data[self.type]
         resp_query_path = deal_path(resp_text["data"]["query_path"])
+
         resp_body_other = json.loads(resp_text["data"]["req_body_other"])['properties']
         resp_body = []
+
         if self.type == 'list':
             resp_body = json.loads(resp_text["data"]["res_body"])['properties']
             resp_body = resp_body['data']['properties']['list']['items']['properties']
@@ -151,12 +153,12 @@ class ZYapi(object):
             #     if key in resp_body_other:
             #         resp_body[]
         diff_arr = list(set([key for key in resp_body_other]) & set([key for key in resp_body]))
+        print('diff_arr',diff_arr)
         for key in diff_arr:
             if len(resp_body_other[key]['description']) > len(resp_body[key]['description']):
                 resp_body[key]['description'] = resp_body_other[key]['description']
             else:
                 resp_body_other[key]['description'] = resp_body[key]['description']
-
         resp_body = sort_p(deal_with_parameter(resp_body, 'show'))
         resp_body_other = sort_p(deal_with_parameter(resp_body_other, 'edit'))
 
@@ -165,5 +167,6 @@ class ZYapi(object):
             'resp_body_other': resp_body_other,
             'resp_body': resp_body,
         }
+        # print('generate_config',generate_config)
         self.GenerateConfig = generate_config
         return generate_config
