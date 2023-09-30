@@ -1,4 +1,7 @@
 import requests
+from hashlib import md5
+import random
+import json
 
 
 def get_user_input(placeholder):
@@ -28,17 +31,47 @@ def sort_p(s_arr):
         return s_arr
 
 
+def make_md5(s, encoding='utf-8'):
+    return md5(s.encode(encoding)).hexdigest()
+
+
 # 翻译
 def translate(string):
-    data = {
-        'doctype': 'json',
-        'type': 'AUTO',
-        'i': string
-    }
-    url = "http://fanyi.youdao.com/translate"
-    r = requests.get(url, params=data)
+    # Set your own appid/appkey.
+    appid = '20221008001377553'
+    appkey = 'cUpgqYUPOSf9Xv8ULudK'
+
+    # For list of language codes, please refer to `https://api.fanyi.baidu.com/doc/21`
+    from_lang = 'zh'
+    to_lang = 'en'
+
+    endpoint = 'http://api.fanyi.baidu.com'
+    path = '/api/trans/vip/translate'
+    url = endpoint + path
+
+    query = string
+
+    # Generate salt and sign
+
+    salt = random.randint(32768, 65536)
+    sign = make_md5(appid + query + str(salt) + appkey)
+
+    # Build request
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    payload = {'appid': appid, 'q': query, 'from': from_lang, 'to': to_lang, 'salt': salt, 'sign': sign}
+
+    # Send request
+    r = requests.post(url, params=payload, headers=headers)
     result = r.json()
+
+    # Show response
+    result = json.dumps(result, indent=4, ensure_ascii=False)
+    result = json.loads(result)
+    # print()
+
+    print(result["trans_result"][0])
+    # print(result['trans_result'][0]['dist'])
     try:
-        return result['translateResult'][0][0]['tgt']
+        return result['trans_result'][0]['dst']
     except:
         return False

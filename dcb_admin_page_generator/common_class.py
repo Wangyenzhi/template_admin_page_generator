@@ -170,3 +170,7 @@ class ZYapi(object):
         # print('generate_config',generate_config)
         self.GenerateConfig = generate_config
         return generate_config
+
+
+if __name__ == '__main__':
+    pass

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dcb_admin_page_generator",
-    version="0.0.6",
+    version="0.0.8",
     author="wyz",
     author_email="846630116@qq.com",
     description="A small example package",
